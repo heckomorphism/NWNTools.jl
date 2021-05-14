@@ -175,4 +175,6 @@ module NWNTools
         mean(ρ_js), std(ρ_js)
     end
 
+    newfunc() = print("Hello World!")
+
 end
