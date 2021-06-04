@@ -1,13 +1,13 @@
 module NWNTools
 
-    export Line, Wire, NWN
-    export len, rand_wires, rand_network, ensemble
-    export intersection_params, line_segment_point, find_juncts
-    export ρ_junct, ρ_junct_avg, ρ_junct_mean_std
+    export Line, Wire, NWN # Classes
+    export len, rand_wires, rand_network, ensemble # Construction tools
+    export intersection_params, line_segment_point, find_juncts # Junction finding
+    export emsd_f, ρ_junct, ρ_junct_avg, ρ_junct_mean_std # Ensemble averaging and junction density tools
 
 
-    using Random
-    using StaticArrays
+    using Random # Needed for random generation of networks
+    using StaticArrays # 
     using SparseArrays
     using Distributions: Normal
     using Statistics: mean, var, std
@@ -35,16 +35,18 @@ module NWNTools
     A structure to hold all of the information relevant to a wire.
     """
     struct Wire{T<:Real,N}
-        line::Line{T,N}
-        length::Float64
-        # d::Float64
-        # ρ::Float64
+        line::Line{T,N} # Wire geomoetry
+        length::Float64 # Wire length
+        # A::Float64 # Cross sectional area
+        # ρ::Float64 # Resistivity
+        Rℓ⁻¹::Float64 # Resistance per length
     end
 
     """
-    Constructor the Wire struct which only requires a Line object.
-        """
-    Wire(ℓ) = Wire(ℓ,len(ℓ))
+    Constructor the Wire struct which only requires a Line object 
+    and resistance per unit length.
+    """
+    Wire(ℓ, Rℓ⁻¹) = Wire(ℓ,len(ℓ), Rℓ⁻¹)
 
     """
     A structure to store a collection of wires in a certain size. 
@@ -62,7 +64,7 @@ module NWNTools
     direction (as sampled unifromly from the N-1 sphere) from 
     the initial point. 
     """
-    function rand_wires(dims::SVector{N,T},n::Int,l) where {N,T}
+    function rand_wires(dims::SVector{N,T},n::Int,l::Float64, Rℓ⁻¹::Float64) where {N,T}
         x₀s = map(x->x.*dims,rand(SVector{N,T},n))
         A = rand(Normal(),N,n)
         # normalize columns of A to leave columns 
@@ -70,19 +72,19 @@ module NWNTools
         A .= A./sqrt.(sum(A.^2,dims=1)).*l
         x₁s = [SVector{N}(c) for c ∈ eachcol(A)]   
         ls = Line.(x₀s,x₀s+x₁s)
-        Wire.(ls)
+        Wire.(ls, Rℓ⁻¹)
     end
 
-    function rand_network(dims::SVector{N,T},ρ,l) where {N,T}
-        NWN(rand_wires(dims, round(Int,ρ*prod(dims)),l),dims)
+    function rand_network(dims::SVector{N,T},ρ,l, Rℓ⁻¹) where {N,T}
+        NWN(rand_wires(dims, round(Int,ρ*prod(dims)),l, Rℓ⁻¹),dims)
     end
 
     """
     Creates an ensemble of nanowire networks with the given 
     paramaters. 
     """
-    function ensemble(n, dims::SVector{N,T},ρ,l) where {N,T}
-        [rand_network(dims, ρ, l) for i∈1:n]
+    function ensemble(n, dims::SVector{N,T},ρ,l,Rℓ⁻¹) where {N,T}
+        [rand_network(dims, ρ, l, Rℓ⁻¹) for i∈1:n]
     end
 
     ensemble(n, params) = ensemble(n, params...)
@@ -177,12 +179,12 @@ module NWNTools
     Computes the mean and standard deviation of the junction 
     density for a certain configuration of NWN parameters.
     """
-    ρ_junct_mean_std(dims, ρ, l; N=32) = emsd_f(ρ_junct, [dims, ρ, l], N=N)
-    ρ_junct_mean_std(params; N=32) = ρ_junct_mean_std(params...; N=N)
+    ρ_junct_mean_std(params; N=32) = emsd_f(ρ_junct, params; N=N)
+    ρ_junct_mean_std(params...; N=32) = ρ_junct_mean_std(params; N=32)
     
     """
     Deprecated, use `ρ_junct_mean_std` instead.
     """
-    ρ_junct_avg(dims, ρ, l; N=32) = emsd_f(ρ_junct, [dims, ρ, l], N=N)[1]
+    ρ_junct_avg(dims, ρ, l, Rℓ⁻¹; N=32) = emsd_f(ρ_junct, [dims, ρ, l, Rℓ⁻¹], N=N)[1]
 
 end
