@@ -157,13 +157,13 @@ module NWNTools
     
     """
     Computes the mean and standard deviation of an observable 
-    f(nw,args...,kwargs...) for nw a NWN.
+    f(nw) for nw a NWN.
 
     Parameters:
-        f:      Function, yakes a NWN as the first argument 
+        f:      Function, takes a NWN as the first argument 
                 and returns an object which the mean and 
                 standard deviation make sense for.
-        params: Dimensions, wire density, and wire length .
+        params: Dimensions, wire density, and wire length.
         N:      Number of networks in the ensemble.
     """
     function emsd_f(f, params; N=32)
