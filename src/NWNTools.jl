@@ -84,15 +84,8 @@ module NWNTools
     function ensemble(n, dims::SVector{N,T},ρ,l) where {N,T}
         [rand_network(dims, ρ, l) for i∈1:n]
     end
-    # function ensemble(n, dims::SVector{N,T},ρ,l) where {N,T}
-    #     # number of wires in each network
-    #     m = round(Int,ρ*prod(dims)) 
-    #     # generate m*n wires
-    #     wires = rand_wires(dims, round(Int,ρ*prod(dims))*n, l)
-    #     # make n networks with m wires each
-    #     [NWN(collect(ws),dims) for ws in Iterators.partition(wires,m)]
 
-    # end
+    ensemble(n, params) = ensemble(n, params...)
 
     """
     Given two lines computes the parameters `[t,s]` so that 
@@ -123,17 +116,6 @@ module NWNTools
     Given an array of line objects finds all points of 
     intersection between lines. 
     """
-    # function find_juncts(lines::Array{Line{T,N},1}) where {T,N}
-    #     juncts = Array{Tuple{SVector{N,T},Tuple{Int,Int}},1}()
-    #     inds = eachindex(lines)
-    #     for i ∈ inds, j ∈ inds
-    #         ps = intersection_params(lines[i],lines[j])
-    #         if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
-    #             push!(juncts,(line_segment_point(ps[1],lines[i]),(i,j)))
-    #         end
-    #     end
-    #     juncts
-    # end
     function find_juncts(nwn::NWN{T,N}) where {T,N}
         juncts = Array{Tuple{SVector{N,T},Tuple{Int,Int}},1}()
         n = length(nwn.wires)
@@ -151,6 +133,10 @@ module NWNTools
         juncts
     end
 
+
+    """
+    Computes junction density in a simiar algorithm to `find_juncts`.
+    """
     function ρ_junct(nwn::NWN{T,N}) where {T,N}
         n = length(nwn.wires)
         m = 0
@@ -159,7 +145,7 @@ module NWNTools
                 ps = intersection_params(nwn.wires[i].line,nwn.wires[j].line)
                 if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
                     p = line_segment_point(ps[1],nwn.wires[i].line)
-                    if sum( SA[0.0,0.0] .≤ p .≤ nwn.dims ) == N
+                    if sum( zeros(SVector{N,T}) .≤ p .≤ nwn.dims ) == N
                         m += 1
                     end
                 end
@@ -168,11 +154,35 @@ module NWNTools
         m/prod(nwn.dims)
     end
 
-    ρ_junct_avg(dims, ρ, l; N=32) = mean(ρ_junct.(ensemble(N,dims, ρ, l)))
-    function ρ_junct_mean_std(dims, ρ, l; N=32)
-        e = ensemble(N,dims, ρ, l)
-        ρ_js = ρ_junct.(e)
-        mean(ρ_js), std(ρ_js)
+    
+    """
+    Computes the mean and standard deviation of an observable 
+    f(nw,args...,kwargs...) for nw a NWN.
+
+    Parameters:
+        f:      Function, yakes a NWN as the first argument 
+                and returns an object which the mean and 
+                standard deviation make sense for.
+        params: Dimensions, wire density, and wire length .
+        N:      Number of networks in the ensemble.
+    """
+    function emsd_f(f, params; N=32)
+        e = ensemble(N, params)
+        res = f.(e)
+        mean(res), std(res)
     end
+
+
+    """
+    Computes the mean and standard deviation of the junction 
+    density for a certain configuration of NWN parameters.
+    """
+    ρ_junct_mean_std(dims, ρ, l; N=32) = emsd_f(ρ_junct, [dims, ρ, l], N=N)
+    ρ_junct_mean_std(params; N=32) = ρ_junct_mean_std(params...; N=N)
+    
+    """
+    Deprecated, use `ρ_junct_mean_std` instead.
+    """
+    ρ_junct_avg(dims, ρ, l; N=32) = emsd_f(ρ_junct, [dims, ρ, l], N=N)[1]
 
 end
