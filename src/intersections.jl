@@ -1,4 +1,4 @@
-export intersection_params, line_segment_point, find_juncts, find_connect
+export intersection_params, line_segment_point, each_intersect, find_juncts, find_connect
 
 """
 Given two lines computes the parameters `[t,s]` so that 
@@ -23,43 +23,64 @@ function line_segment_point(t::T, w::Line) where T<:Real
     w.p₂*t+(1-t)*w.p₁
 end
 
+function each_intersect(f!, arr₁::Array{Line{S,N}}, arr₂::Array{Line{S,N}}, dims::SVector{N,S}, arg) where {S,N}
+    for i₁ ∈ eachindex(arr₁)
+        for i₂ ∈ eachindex(arr₂)
+            ps = intersection_params(arr₁[i₁],arr₂[i₂])
+            if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
+                p = line_segment_point(ps[1],arr₁[i₁])
+                if sum( SA[0.0,0.0] .≤ p .≤ dims ) == N
+                    f!(i₁,i₂,arr₁,arr₂,dims,ps,p,arg)
+                end
+            end
+        end
+    end
+    arg
+end
+
+function each_intersect(f!, arr::Array{Line{S,N}}, dims::SVector{N,S}, arg) where {S,N}
+    n = length(arr)
+    for i₁ ∈ 2:(n)
+        for i₂ ∈ 1:(i₁-1)
+            ps = intersection_params(arr[i₁],arr[i₂])
+            if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
+                p = line_segment_point(ps[1],arr[i₁])
+                if sum( SA[0.0,0.0] .≤ p .≤ dims ) == N
+                    f!(i₁,i₂,arr,dims,ps,p,arg)
+                end
+            end
+        end
+    end
+    arg
+end
+
 """
 Given an NWN object finds all points of 
 intersection between wires. 
 """
 function find_juncts(nwn::NWN{T,N}) where {T,N}
-    juncts = Array{Tuple{SVector{N,T},Tuple{Int,Int}},1}()
-    n = length(nwn.wires)
-    for i ∈ 2:(n)
-        for j ∈ 1:(i-1)
-            ps = intersection_params(nwn.wires[i].line,nwn.wires[j].line)
-            if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
-                p = line_segment_point(ps[1],nwn.wires[i].line)
-                if sum( SA[0.0,0.0] .≤ p .≤ nwn.dims ) == N
-                    push!(juncts,(p,(i,j)))
-                end
-            end
-        end
+    each_intersect([w.line for w ∈ nwn.wires], nwn.dims, Array{Tuple{SVector{N,T},Tuple{Int,Int}},1}()) do i₁,i₂,arr,dims,ps,p,juncts
+        push!(juncts,(p,(i₁,i₂)))
     end
-    juncts
 end
 
 """
 Given an NWN object finds all connections between wires. 
 """
 function find_connect(nwn::NWN{T,N}) where {T,N}
-    connects = Array{Tuple{Int,Int},1}()
-    n = length(nwn.wires)
-    for i ∈ 2:(n)
-        for j ∈ 1:(i-1)
-            ps = intersection_params(nwn.wires[i].line,nwn.wires[j].line)
-            if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
-                p = line_segment_point(ps[1],nwn.wires[i].line)
-                if sum( SA[0.0,0.0] .≤ p .≤ nwn.dims ) == N
-                    push!(connects,(i,j))
-                end
-            end
-        end
+    each_intersect([w.line for w ∈ nwn.wires], nwn.dims, Array{Tuple{Int,Int},1}()) do i₁,i₂,arr,dims,ps,p,connects
+        push!(connects,(i₁,i₂))
     end
-    connects
+end
+
+function connections(arr₁::Array{Line{S,N}}, arr₂::Array{Line{S,N}}, dims::SVector{N,S}) where {S,N}
+    each_intersect(arr₁, arr₂, dims, Array{Tuple{Int,Int},1}()) do i₁,i₂,arr₁,arr₂,dims,ps,p,connects
+        push!(connects,(i₁,i₂))
+    end
+end
+
+function connections(arr::Array{Line{S,N}}, dims::SVector{N,S}) where {S,N}
+    each_intersect(arr, dims, Array{Tuple{Int,Int},1}()) do i₁,i₂,arr,dims,ps,p,connects
+        push!(connects,(i₁,i₂))
+    end
 end

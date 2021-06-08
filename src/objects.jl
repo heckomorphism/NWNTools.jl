@@ -1,6 +1,6 @@
-export Line, Wire, NWN, len
+export Line, Wire, NWN, WireProps, NWN_electrodes, len
 
-using StaticArrays
+using StaticArrays, LinearAlgebra
 
 
 """
@@ -25,6 +25,11 @@ struct Wire{T<:Real,N}
     # Rℓ⁻¹::Float64 # Resistance per length
 end
 
+struct WireProp{T<:Number}
+    ρ::T # Resistivity
+    D::T # Wire diameter
+end
+
 """
 A structure to store a collection of wires in a certain size. 
 """
@@ -33,8 +38,19 @@ struct NWN{T<:Real,N}
     dims::SVector{N,T}
 end
 
+struct NWN_electrodes{S<:Real,T<:Number,N}
+    lines::Array{Line{S,N},1}
+    props::Array{WireProps{T},1}
+    elecs::Array{Line{S,N},1}
+    grnds::Array{Line{S,N},1}
+    dims::SVector{N,S}
+    Rⱼ::T
+    Rₑ::T
+end
 
 
+
+# Conversion methods
 import Base.convert
 Line(p₁::Array{T,1},p₂::Array{S,1}) where {T,S} = Line(promote(SVector{length(p₁)}(p₁), SVector{length(p₂)}(p₂))...)
 convert(::Type{Line{T,N}},x::Line{S,N}) where {T,S,N} = Line(convert(SVector{N,T},x.p₁), convert(SVector{N,T},x.p₂))
