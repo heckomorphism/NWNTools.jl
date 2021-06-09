@@ -40,7 +40,7 @@ end
 
 struct NWN_electrodes{S<:Real,T<:Number,N}
     lines::Array{Line{S,N},1}
-    props::Array{WireProps{T},1}
+    props::Array{WireProp{T},1}
     elecs::Array{Line{S,N},1}
     grnds::Array{Line{S,N},1}
     dims::SVector{N,S}
