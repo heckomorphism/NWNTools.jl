@@ -1,4 +1,4 @@
-export rand_lines, rand_wires, rand_network, ensemble
+export rand_lines, rand_wires, rand_network, rand_network_JDA, ensemble
 
 using Random
 using Distributions: Normal
@@ -42,6 +42,14 @@ function rand_network(dims::SVector{N,T},n,l,ρ,D) where {N,T}
     NWN(wires, dims)
 end
 
+function rand_network_JDA(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ) where {T}
+    lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
+    wprops = repeat([WireProp(ρ,D)],n)
+    elec = Line(SA[0.0,0.0],SA[0.0,dims[2]])
+    grnd = Line(SA[dims[1],0.0],dims)
+    NWN_JDA(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
+end
+
 """
 Creates an ensemble of nanowire networks with the given 
 paramaters. 
@@ -51,3 +59,4 @@ function ensemble(n, dims::SVector{N,T},ρₙ,l,ρ,D) where {N,T}
 end
 
 ensemble(n, params) = ensemble(n, params...)
+

@@ -1,4 +1,4 @@
-export JDA_graph, NWN_JDA, JDA_eqs, JDA_sheet_resistance
+export graph_JDA, NWN_JDA, eqs_JDA, sheet_resistance_JDA
 
 using SparseArrays
 
@@ -7,7 +7,7 @@ swap_index(a) = collect(broadcast(x->getindex(x,i),a) for i ∈ eachindex(a[1]))
 """
 Generates the graph of the nanowire network.
 """
-function JDA_graph(lines, elecs, grnds, dims, Rⱼ, Rₑ)
+function graph_JDA(lines, elecs, grnds, dims, Rⱼ, Rₑ)
     ww_src, ww_dst = swap_index(connections(lines, dims))
     we_src, we_dst = swap_index(connections(lines, elecs, dims))
     wg_src, wg_dst = swap_index(connections(lines, grnds, dims))
@@ -24,7 +24,7 @@ end
 function NWN_JDA(lines::Array{Line{S,N},1}, props::Array{WireProp{T},1}, 
     elecs::Array{Line{S,N},1}, volts::Array{T,1}, grnds::Array{Line{S,N},1}, 
     dims::SVector{N,S}, Rⱼ::T, Rₑ::T) where {S<:Real,T<:Number,N}
-    graph = JDA_graph(lines, elecs, grnds, dims, Rⱼ, Rₑ)
+    graph = graph_JDA(lines, elecs, grnds, dims, Rⱼ, Rₑ)
     NWN_JDA(lines, props, elecs, volts, grnds, dims, Rⱼ, Rₑ, graph)
 end
 
@@ -35,7 +35,7 @@ the JDA. Removes ill conditioned nodes (those not
 connected through the circuit to a voltage source 
 or ground).
 """
-function JDA_eqs(nwn::NWN_JDA{S,T,N}) where {S,T,N}
+function eqs_JDA(nwn::NWN_JDA{S,T,N}) where {S,T,N}
     nₗ, nₑ, n₀ = length(nwn.lines), length(nwn.elecs), length(nwn.grnds)
 
     # include only nodes part of the actual circuit
@@ -62,7 +62,7 @@ function JDA_eqs(nwn::NWN_JDA{S,T,N}) where {S,T,N}
     A,z,inds
 end
 
-function JDA_sheet_resistance(nwn)
+function sheet_resistance_JDA(nwn)
     @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
     A, z, inds = JDA_eqs(nwn)
     sol = A\collect(z)
