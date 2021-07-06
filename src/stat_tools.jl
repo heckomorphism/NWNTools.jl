@@ -19,6 +19,12 @@ function emsd_f(f, params; N=32)
     mean(res), std(res)
 end
 
+function emsd_f_JDA(f, params; N=32)
+    e = ensemble(N, params...)
+    res = f.(e)
+    mean(res), std(res)
+end
+
 """
 Computes junction density in a simiar algorithm to `find_juncts`.
 """

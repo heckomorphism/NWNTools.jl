@@ -1,4 +1,4 @@
-export intersection_params, line_segment_point, each_intersect, find_juncts, find_connect
+export intersection_params, line_segment_point, each_intersect, find_juncts, find_connect, connections
 
 """
 Given two lines computes the parameters `[t,s]` so that 

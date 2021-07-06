@@ -1,7 +1,7 @@
 name = "NWNTools"
 uuid = "57a86b13-246b-47ef-b5f2-61b58713240d"
 authors = ["Emma Johnson"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"

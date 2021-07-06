@@ -5,7 +5,9 @@ using SparseArrays
 swap_index(a) = collect(broadcast(x->getindex(x,i),a) for i ∈ eachindex(a[1]))
 
 """
-Generates the graph of the nanowire network.
+Generates the graph of the nanowire network. Requires 
+at least one of each of wire-wire, wire-electrode, 
+and wire-ground intersections.
 """
 function graph_JDA(lines, elecs, grnds, dims, Rⱼ, Rₑ)
     ww_src, ww_dst = swap_index(connections(lines, dims))
@@ -62,9 +64,9 @@ function eqs_JDA(nwn::NWN_JDA{S,T,N}) where {S,T,N}
     A,z,inds
 end
 
-function sheet_resistance_JDA(nwn)
+function sheet_resistance_JDA(nwn::NWN_JDA{S,T,N}) where {S,T,N}
     @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
-    A, z, inds = JDA_eqs(nwn)
+    A, z, inds = eqs_JDA(nwn)
     sol = A\collect(z)
     nwn.volts[1]/sol[end]
 end
