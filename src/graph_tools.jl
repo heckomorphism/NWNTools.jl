@@ -1,68 +1,70 @@
-export JDA_graph1, JDA_graph2, JDA_graph3
+export JDA_graph, NWN_JDA, JDA_eqs, JDA_sheet_resistance
 
-using LightGraphs, SimpleWeightedGraphs, SparseArrays
+using SparseArrays
 
 swap_index(a) = collect(broadcast(x->getindex(x,i),a) for i ∈ eachindex(a[1]))
 
-# Test JDA Laplacian with no terminals
-
-function JDA_graph1(nwn::NWN{T,N}, Rⱼ) where {T,N}
-    n = length(nwn.wires)
-    g = SimpleWeightedGraph(n)
-    for i ∈ 2:(n)
-        for j ∈ 1:(i-1)
-            ps = intersection_params(nwn.wires[i].line,nwn.wires[j].line)
-            if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
-                p = line_segment_point(ps[1],nwn.wires[i].line)
-                if sum( zeros(SVector{N,T}) .≤ p .≤ nwn.dims ) == N
-                    add_edge!(g,i,j,1/Rⱼ)
-                end
-            end
-        end
-    end
-    return laplacian_matrix(g)
-end
-
-function JDA_graph2(nwn::NWN{T,N}, Rⱼ) where {T,N}
-    connects = find_connect(nwn)
-    g = SimpleWeightedGraph(swap_index(connects)..., repeat([1/Rⱼ],length(connects)))
-    return laplacian_matrix(g)
-end
-
-function JDA_graph3(nwn::NWN{T,N}, Rⱼ) where {T,N}
-    n = length(nwn.wires)
-    L = spzeros(n,n)
-    for i ∈ 2:(n)
-        for j ∈ 1:(i-1)
-            ps = intersection_params(nwn.wires[i].line,nwn.wires[j].line)
-            if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
-                p = line_segment_point(ps[1],nwn.wires[i].line)
-                if sum( zeros(SVector{N,T}) .≤ p .≤ nwn.dims ) == N
-                    L[i,j] = L[j,i] = 1/Rⱼ
-                end
-            end
-        end
-    end
-
-    for i ∈ 1:n
-        L[i,i] = -sum(L[:,i])
-    end
-    return L
-end
-
-# Try implementing terminals
-
-function JDA_graph_elecs1(nwn::NWN_electrodes)
-    ww_src, ww_dst = swap_index(connections(nwn.lines, nwn.dims))
-    we_src, we_dst = swap_index(connections(nwn.lines, nwn.elecs, nwn.dims))
-    wg_src, wg_dst = swap_index(connections(nwn.lines, nwn.grnds, nwn.dims))
-    nₗ, nₑ = length(nwn.lines), length(nwn.elecs)
+"""
+Generates the graph of the nanowire network.
+"""
+function JDA_graph(lines, elecs, grnds, dims, Rⱼ, Rₑ)
+    ww_src, ww_dst = swap_index(connections(lines, dims))
+    we_src, we_dst = swap_index(connections(lines, elecs, dims))
+    wg_src, wg_dst = swap_index(connections(lines, grnds, dims))
+    nₗ, nₑ = length(lines), length(elecs)
     mₗ, mₑ, m₀ = length(ww_src), length(we_src), length(wg_src)
     src = vcat(ww_src, we_src, wg_src)
-    dst = vcat(ww_dst, we_dst.+nₗ, wg_dst.+nₗ.+nₑ)
-    wgt = 1 ./ vcat(repeat([nwn.Rⱼ],mₗ),repeat([nwn.Rₑ],mₑ+m₀))
+    dst = vcat(ww_dst, we_dst.+nₗ, wg_dst.+(nₗ+nₑ))
+    wgt = vcat(ones(mₗ)./Rⱼ,ones(mₑ+m₀)./Rₑ)
     g = SimpleWeightedGraph(src, dst, wgt)
-    laplacian_matrix(g)
+    g
 end
 
-    
+# a constuctor for NWN_JDA that makes the graph
+function NWN_JDA(lines::Array{Line{S,N},1}, props::Array{WireProp{T},1}, 
+    elecs::Array{Line{S,N},1}, volts::Array{T,1}, grnds::Array{Line{S,N},1}, 
+    dims::SVector{N,S}, Rⱼ::T, Rₑ::T) where {S<:Real,T<:Number,N}
+    graph = JDA_graph(lines, elecs, grnds, dims, Rⱼ, Rₑ)
+    NWN_JDA(lines, props, elecs, volts, grnds, dims, Rⱼ, Rₑ, graph)
+end
+
+"""
+Creates the system of equations which solves the 
+electrical problem of the nanowire network under 
+the JDA. Removes ill conditioned nodes (those not 
+connected through the circuit to a voltage source 
+or ground).
+"""
+function JDA_eqs(nwn::NWN_JDA{S,T,N}) where {S,T,N}
+    nₗ, nₑ, n₀ = length(nwn.lines), length(nwn.elecs), length(nwn.grnds)
+
+    # include only nodes part of the actual circuit
+    con_comps = connected_components(nwn.graph)
+    connected = vcat(con_comps[.!(con_comps .⊆ [1:nₗ])]...)
+
+    # remove grounds from equations as MNA requires
+    inds = setdiff(connected, nₗ+nₑ+1:nₗ+nₑ+n₀)
+
+    # view of Laplacian of graph with indices needed
+    L = -laplacian_matrix(nwn.graph)[inds,inds]
+
+    # generates B matrix
+    B = spzeros(length(inds),nₑ)
+    for i ∈ 1:nₑ
+        B[findfirst(inds.==(nₗ+i)),i] = 1
+    end
+
+    # generates system of equations in the form Ax=z
+    A = [L B;
+        transpose(B) spzeros(nₑ,nₑ)]
+    z = [spzeros(length(inds));
+        sparse(nwn.volts)]
+    A,z,inds
+end
+
+function JDA_sheet_resistance(nwn)
+    @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
+    A, z, inds = JDA_eqs(nwn)
+    sol = A\collect(z)
+    nwn.volts[1]/sol[end]
+end

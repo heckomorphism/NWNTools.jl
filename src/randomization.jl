@@ -1,4 +1,4 @@
-export rand_wires, rand_network, ensemble
+export rand_lines, rand_wires, rand_network, ensemble
 
 using Random
 using Distributions: Normal

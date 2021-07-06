@@ -1,6 +1,6 @@
-export Line, Wire, NWN, WireProps, NWN_electrodes, len
+export Line, Wire, NWN, WireProp, NWN_JDA, len
 
-using StaticArrays, LinearAlgebra
+using StaticArrays, LinearAlgebra, LightGraphs, SimpleWeightedGraphs
 
 
 """
@@ -38,14 +38,16 @@ struct NWN{T<:Real,N}
     dims::SVector{N,T}
 end
 
-struct NWN_electrodes{S<:Real,T<:Number,N}
+struct NWN_JDA{S<:Real,T<:Number,N}
     lines::Array{Line{S,N},1}
     props::Array{WireProp{T},1}
     elecs::Array{Line{S,N},1}
+    volts::Array{T,1}
     grnds::Array{Line{S,N},1}
     dims::SVector{N,S}
     Rⱼ::T
     Rₑ::T
+    graph::SimpleWeightedGraph{Int, T}
 end
 
 
