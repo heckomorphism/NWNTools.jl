@@ -14,7 +14,7 @@ Parameters:
     N:      Number of networks in the ensemble.
 """
 function emsd_f(f, params; N=32)
-    e = ensemble(N, params)
+    e = ensemble_JDA(N, params)
     res = f.(e)
     mean(res), std(res)
 end
