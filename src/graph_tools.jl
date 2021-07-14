@@ -1,8 +1,18 @@
-export graph_JDA, NWN_JDA, eqs_JDA, sheet_resistance_JDA
+export graph_JDA, NWN_JDA, eqs_JDA, sheet_resistance_JDA, is_conducting
 
 using SparseArrays
 
-swap_index(a) = collect(broadcast(x->getindex(x,i),a) for i ∈ eachindex(a[1]))
+"""
+Takes an iterable collection of iterable collections of the 
+form (a,b,c,...) and returns an object with "reversed" nesting 
+of the form ((a[1],b[1],c[1],...),(a[2],b[2],c[2],...),...).
+"""
+function swap_index(a)
+    # if a is empty then set n=0 otherwise n=length(a[1])
+    n = length(a) 
+    n==0 || (n=length(a[1])) 
+    collect(broadcast(x->getindex(x,i),a) for i ∈ 1:n)
+end
 
 """
 Generates the graph of the nanowire network. Requires 
@@ -64,9 +74,31 @@ function eqs_JDA(nwn::NWN_JDA{S,T,N}) where {S,T,N}
     A,z,inds
 end
 
+"""
+Calculates the sheet resistance of a NWN object. 
+Solves the network using MNA and returns the ratio 
+of the voltage to the current. Requires the network 
+to have only one electrode.
+"""
 function sheet_resistance_JDA(nwn::NWN_JDA{S,T,N}) where {S,T,N}
     @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
     A, z, inds = eqs_JDA(nwn)
     sol = A\collect(z)
     nwn.volts[1]/sol[end]
+end
+
+"""
+Returns a boolean value for if the given network 
+has a path from at least one electrode and ground.
+"""
+function is_conducting(nwn::NWN_JDA{S,T,N}) where {S,T,N}
+    nₗ, nₑ = length(nwn.lines), length(nwn.elecs)
+    for i ∈ 1:length(nwn.elecs)
+        for j ∈ 1:length(nwn.grnds)
+            if has_path(nwn.graph,i+nₗ,j+nₗ+nₑ)
+                return true
+            end
+        end
+    end
+    return false
 end
