@@ -1,4 +1,4 @@
-export graph_JDA, NWN_JDA, eqs_JDA, sheet_resistance_JDA, is_conducting
+export graph_JDA, NWN_JDA, eqs_JDA, sheet_resistance_JDA, is_conducting, swap_index
 
 using SparseArrays
 
@@ -20,9 +20,9 @@ at least one of each of wire-wire, wire-electrode,
 and wire-ground intersections.
 """
 function graph_JDA(lines, elecs, grnds, dims, Rⱼ, Rₑ)
-    ww_src, ww_dst = swap_index(connections(lines, dims))
-    we_src, we_dst = swap_index(connections(lines, elecs, dims))
-    wg_src, wg_dst = swap_index(connections(lines, grnds, dims))
+    ww_src, ww_dst = connections(lines, dims)
+    we_src, we_dst = connections(lines, elecs, dims)
+    wg_src, wg_dst = connections(lines, grnds, dims)
     nₗ, nₑ = length(lines), length(elecs)
     mₗ, mₑ, m₀ = length(ww_src), length(we_src), length(wg_src)
     src = vcat(ww_src, we_src, wg_src)

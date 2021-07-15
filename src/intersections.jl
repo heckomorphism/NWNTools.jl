@@ -74,13 +74,15 @@ function find_connect(nwn::NWN{T,N}) where {T,N}
 end
 
 function connections(arr₁::Array{Line{S,N}}, arr₂::Array{Line{S,N}}, dims::SVector{N,S}) where {S,N}
-    each_intersect(arr₁, arr₂, dims, Array{Tuple{Int,Int},1}()) do i₁,i₂,arr₁,arr₂,dims,ps,p,connects
-        push!(connects,(i₁,i₂))
+    each_intersect(arr₁, arr₂, dims, (Int[],Int[])) do i₁,i₂,arr₁,arr₂,dims,ps,p,connects
+        push!(connects[1],i₁)
+        push!(connects[2],i₂)
     end
 end
 
 function connections(arr::Array{Line{S,N}}, dims::SVector{N,S}) where {S,N}
-    each_intersect(arr, dims, Array{Tuple{Int,Int},1}()) do i₁,i₂,arr,dims,ps,p,connects
-        push!(connects,(i₁,i₂))
+    each_intersect(arr, dims, (Int[],Int[])) do i₁,i₂,arr,dims,ps,p,connects
+        push!(connects[1],i₁)
+        push!(connects[2],i₂)
     end
 end
