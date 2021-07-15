@@ -5,5 +5,6 @@ module NWNTools
     include("graph_tools.jl")
     include("randomization.jl")
     include("stat_tools.jl")
-    
+    include("plotting.jl")
+
 end
