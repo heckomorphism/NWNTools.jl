@@ -50,15 +50,7 @@ function rand_network_JDA(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ) where {T}
     NWN_JDA(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
 end
 
-function rand_network_JDA2(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ) where {T}
-    lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
-    wprops = repeat([WireProp(ρ,D)],n)
-    elec = Line(SA[0.0,0.0],SA[0.0,dims[2]])
-    grnd = Line(SA[dims[1],0.0],dims)
-    NWN_JDA(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
-end
-
-function rand_network_JDA2(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,Val(:conducting)) where {T}
+function rand_network_JDA(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,::Val{:conducting}) where {T}
     lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
     wprops = repeat([WireProp(ρ,D)],n)
     elec = Line(SA[0.0,0.0],SA[0.0,dims[2]])
@@ -68,6 +60,7 @@ function rand_network_JDA2(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,Val(:condu
         lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
         nwn = NWN_JDA(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
     end
+    nwn
 end
 
 """
@@ -80,11 +73,7 @@ end
 
 ensemble(n, params) = ensemble(n, params...)
 
-function ensemble_JDA(n,dims::SVector{2,T},ρₙ,l,ρ,D,V₊,Rⱼ,Rₑ) where {T}
-    [rand_network_JDA(dims,round(Int,ρₙ*prod(dims)),l,ρ,D,V₊,Rⱼ,Rₑ) for i∈1:n]
-end
-
-function ensemble_JDA2(n,dims::SVector{2,T},ρₙ,l,ρ,D,V₊,Rⱼ,Rₑ,args...) where {T}
+function ensemble_JDA(n,dims::SVector{2,T},ρₙ,l,ρ,D,V₊,Rⱼ,Rₑ,args...) where {T}
     [rand_network_JDA(dims,round(Int,ρₙ*prod(dims)),l,ρ,D,V₊,Rⱼ,Rₑ,args...) for i∈1:n]
 end
 
