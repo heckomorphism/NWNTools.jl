@@ -19,8 +19,8 @@ function emsd_f(f, params; N=32)
     mean(res), std(res)
 end
 
-function emsd_f_JDA(f, params; N=32)
-    e = ensemble_JDA(N, params...)
+function emsd_f_JDA(f, params, args...; N=32)
+    e = ensemble_JDA(N, params...,args...)
     res = f.(e)
     mean(res), std(res)
 end

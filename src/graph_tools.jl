@@ -23,13 +23,13 @@ function graph_JDA(lines, elecs, grnds, dims, Rⱼ, Rₑ)
     ww_src, ww_dst = connections(lines, dims)
     we_src, we_dst = connections(lines, elecs, dims)
     wg_src, wg_dst = connections(lines, grnds, dims)
-    nₗ, nₑ = length(lines), length(elecs)
+    nₗ, nₑ, n₀ = length(lines), length(elecs), length(grnds)
     mₗ, mₑ, m₀ = length(ww_src), length(we_src), length(wg_src)
     src = vcat(ww_src, we_src, wg_src)
     dst = vcat(ww_dst, we_dst.+nₗ, wg_dst.+(nₗ+nₑ))
     wgt = vcat(ones(mₗ)./Rⱼ,ones(mₑ+m₀)./Rₑ)
-    g = SimpleWeightedGraph(src, dst, wgt)
-    g
+    sp = sparse(vcat(src,dst), vcat(dst,src), vcat(wgt,wgt),nₗ+nₑ+n₀,nₗ+nₑ+n₀,+)
+    SimpleWeightedGraph(sp)
 end
 
 # a constuctor for NWN_JDA that makes the graph
