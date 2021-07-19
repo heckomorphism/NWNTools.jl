@@ -8,6 +8,6 @@ V₊ = 5.0
 Rⱼ = 11.0
 Rₑ = 7.0
 
-nwn = rand_network_JDA(dims, round(Int,prod(dims)*ρₙ), l, ρₑ, D, V₊, Rⱼ, Rₑ)
+nwn = rand_network_JDA(dims, round(Int,prod(dims)*ρₙ), l, ρₑ, D, V₊, Rⱼ, Rₑ, Val(:conducting));
 
-e = ensemble_JDA(100, dims, ρₙ, l, ρₑ, D, V₊, Rⱼ, Rₑ)
+e = ensemble_JDA(100, dims, ρₙ, l, ρₑ, D, V₊, Rⱼ, Rₑ, Val(:conducting));
