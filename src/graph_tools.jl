@@ -40,6 +40,51 @@ function NWN_JDA(lines::Array{Line{S,N},1}, props::Array{WireProp{T},1},
     NWN_JDA(lines, props, elecs, volts, grnds, dims, Rⱼ, Rₑ, graph)
 end
 
+function graph_MNR(lines, wprops, elecs, grnds, dims, Rⱼ, Rₑ)
+    nₗ, nₑ, n₀ = length(lines), length(elecs), length(grnds)
+    n = nₗ + nₑ + n₀
+    line_ip = SVector{n}([Float64[] for i ∈ 1:n])
+    juncts = NamedTuple{(:R,:c₁,:c₂),Tuple{Float64,Tuple{Int,Int},Tuple{Int,Int}}}[]
+    each_intersect(lines, dims, []) do i₁,i₂,arr,dims,ps,p,arg
+        push!(line_ip[i₁],ps[1])
+        push!(line_ip[i₂],ps[2])
+        push!(juncts,(R=Rⱼ,c₁=(i₁,length(line_ip[i₁])),c₂=(i₂,length(line_ip[i₂]))))
+    end
+    each_intersect(lines, vcat(elecs,grnds), dims, []) do i₁,i₂,arr₁,arr₂,dims,ps,p,arg
+        i₂ += nₗ
+        push!(line_ip[i₁],ps[1])
+        push!(line_ip[i₂],ps[2])
+        push!(juncts,(R=Rₑ,c₁=(i₁,length(line_ip[i₁])),c₂=(i₂,length(line_ip[i₂]))))
+    end
+    ls = length.(line_ip)
+    ns = cumsum(ls).-ls
+    nᵢ = ns[nₗ]+ls[nₗ]-nₗ
+    nⱼ = length(juncts)
+    perms = sortperm.(line_ip)
+    invperms = invperm.(perms)
+    permute!.(line_ip,perms)
+
+    src, dst, wgt = zeros(Int,nᵢ+nⱼ), zeros(Int,nᵢ+nⱼ), zeros(Float64,nᵢ+nⱼ)
+    for i ∈ 1:nₗ
+        js = 1:(ls[i]-1)
+        slice = js.+(ns[i]-i+1)
+        Rₗ = len(lines[i])*wprops[i].ρ/(π*wprops[i].D*wprops[i].D)
+        src[slice] = js
+        dst[slice] = js.+1
+        wgt[slice] = 1 ./(Rₗ.*(diff(line_ip[i])))
+    end
+    for (i,ju) ∈ enumerate(juncts)
+        src[i+nᵢ] = ns[ju.c₁[1]]+invperms[ju.c₁[1]][ju.c₁[2]]
+        dst[i+nᵢ] = ns[ju.c₂[1]]+invperms[ju.c₂[1]][ju.c₂[2]]
+        wgt[i+nᵢ] = 1/ju.R
+    end
+    sp = sparse(vcat(src,dst), vcat(dst,src), vcat(wgt,wgt),ns[end]+ls[end],ns[end]+ls[end],+)
+    SimpleWeightedGraph(sp), ls
+end
+
+
+
+
 """
 Creates the system of equations which solves the 
 electrical problem of the nanowire network under 
