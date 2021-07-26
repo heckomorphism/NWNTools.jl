@@ -58,7 +58,7 @@ function graph_MNR(lines, wprops, elecs, grnds, dims, Rⱼ, Rₑ)
     end
     ls = length.(line_ip)
     ns = cumsum(ls).-ls
-    nᵢ = ns[nₗ]+ls[nₗ]-nₗ
+    nᵢ = ns[nₗ]+ls[nₗ]-sum(ls[1:nₗ].>1)
     nⱼ = length(juncts)
     perms = sortperm.(line_ip)
     invperms = invperm.(perms)
@@ -69,8 +69,8 @@ function graph_MNR(lines, wprops, elecs, grnds, dims, Rⱼ, Rₑ)
         js = 1:(ls[i]-1)
         slice = js.+(ns[i]-i+1)
         Rₗ = len(lines[i])*wprops[i].ρ/(π*wprops[i].D*wprops[i].D)
-        src[slice] = js
-        dst[slice] = js.+1
+        src[slice] = js.+ns[i]
+        dst[slice] = js.+(1+ns[i]) 
         wgt[slice] = 1 ./(Rₗ.*(diff(line_ip[i])))
     end
     for (i,ju) ∈ enumerate(juncts)
