@@ -1,4 +1,4 @@
-export rand_lines, rand_wires, rand_network, rand_network_JDA, ensemble, ensemble_JDA
+export rand_lines, rand_wires, rand_network, rand_network_circuit, ensemble, ensemble_JDA
 
 using Random
 using Distributions: Normal
@@ -42,23 +42,23 @@ function rand_network(dims::SVector{N,T},n,l,ρ,D) where {N,T}
     NWN(wires, dims)
 end
 
-function rand_network_JDA(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ) where {T}
+function rand_network_circuit(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,M) where {T}
     lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
     wprops = repeat([WireProp(ρ,D)],n)
     elec = Line(SA[0.0,0.0],SA[0.0,dims[2]])
     grnd = Line(SA[dims[1],0.0],dims)
-    NWN_JDA(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
+    NWN_circuit{M}(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
 end
 
-function rand_network_JDA(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,::Val{:conducting}) where {T}
+function rand_network_circuit(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,M,::Val{:conducting}) where {T}
     lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
     wprops = repeat([WireProp(ρ,D)],n)
     elec = Line(SA[0.0,0.0],SA[0.0,dims[2]])
     grnd = Line(SA[dims[1],0.0],dims)
-    nwn = NWN_JDA(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
+    nwn = NWN_circuit{M}(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
     while !is_conducting(nwn)
         lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
-        nwn = NWN_JDA(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
+        nwn = NWN_circuit{M}(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
     end
     nwn
 end
@@ -73,7 +73,7 @@ end
 
 ensemble(n, params) = ensemble(n, params...)
 
-function ensemble_JDA(n,dims::SVector{2,T},ρₙ,l,ρ,D,V₊,Rⱼ,Rₑ,args...) where {T}
-    [rand_network_JDA(dims,round(Int,ρₙ*prod(dims)),l,ρ,D,V₊,Rⱼ,Rₑ,args...) for i∈1:n]
+function ensemble_circuit(n,dims::SVector{2,T},ρₙ,l,ρ,D,V₊,Rⱼ,Rₑ,M,args...) where {T}
+    [rand_network_circuit(dims,round(Int,ρₙ*prod(dims)),l,ρ,D,V₊,Rⱼ,Rₑ,M,args...) for i∈1:n]
 end
 

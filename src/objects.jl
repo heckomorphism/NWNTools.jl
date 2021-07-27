@@ -38,16 +38,20 @@ struct NWN{T<:Real,N}
     dims::SVector{N,T}
 end
 
-struct NWN_JDA{S<:Real,T<:Number,N}
-    lines::Array{Line{S,N},1}
+mutable struct NWN_circuit{M,T<:Number,N} # T is numeric type, N is number of spatial dimensions, M is Model parameter
+    lines::Array{Line{T,N},1}
     props::Array{WireProp{T},1}
-    elecs::Array{Line{S,N},1}
+    elecs::Array{Line{T,N},1}
     volts::Array{T,1}
-    grnds::Array{Line{S,N},1}
-    dims::SVector{N,S}
+    grnds::Array{Line{T,N},1}
+    dims::SVector{N,T}
     Rⱼ::T
     Rₑ::T
     graph::SimpleWeightedGraph{Int, T}
+    ls::Vector{Int}
+    function NWN_circuit{M}(lines::Array{Line{T,N},1},props::Array{WireProp{T},1},elecs::Array{Line{T,N},1},volts::Array{T,1},grnds::Array{Line{T,N},1},dims::SVector{N,T},Rⱼ::T,Rₑ::T) where {M,T,N}
+        update_graph(new(lines,props,elecs,volts,grnds,dims,Rⱼ,Rₑ))
+    end
 end
 
 

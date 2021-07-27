@@ -8,7 +8,7 @@ using RecipesBase
     xs,ys
 end
 
-@recipe function f(nwn::NWN_JDA{S,T,N}) where {S,T,N}
+@recipe function f(nwn::NWN_circuit)
     legend := false
     grid := false
     seriestype := :line
