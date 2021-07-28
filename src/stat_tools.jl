@@ -1,4 +1,4 @@
-export emsd_f, emsd_f_JDA, ρ_junct, ρ_junct_avg, ρ_junct_mean_std
+export emsd_f, emsd_f_circuit, ρ_junct, ρ_junct_avg, ρ_junct_mean_std
 
 using Statistics: mean, var, std
 

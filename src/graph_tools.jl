@@ -1,4 +1,4 @@
-export graph_JDA, NWN_JDA, eqs_JDA, sheet_resistance_JDA, is_conducting, swap_index
+export update_graph, circuit_eqs, sheet_resistance, is_conducting, swap_index
 
 using SparseArrays
 
@@ -29,51 +29,58 @@ function update_graph(nwn::NWN_circuit{:JDA,T,N}) where {T,N}
     wgt = vcat(ones(mₗ)./nwn.Rⱼ,ones(mₑ+m₀)./nwn.Rₑ)
     sp = sparse(vcat(src,dst), vcat(dst,src), vcat(wgt,wgt),n,n,+)
     nwn.graph=SimpleWeightedGraph(sp)
-    nwn.ls = ones(Float64,n)
+    nwn.ls = ones(Int,n)
     nwn.ns = cumsum(nwn.ls)
+    nwn
 end
 
 function update_graph(nwn::NWN_circuit{:MNR,T,N}) where {T,N}
     nₗ, nₑ, n₀ = length(nwn.lines), length(nwn.elecs), length(nwn.grnds)
     n = nₗ + nₑ + n₀
-    line_ip = SVector{n}([Float64[] for i ∈ 1:n])
-    juncts = NamedTuple{(:R,:c₁,:c₂),Tuple{Float64,Tuple{Int,Int},Tuple{Int,Int}}}[]
-    each_intersect(nwn.lines, nwn.dims, []) do i₁,i₂,arr,nwn.dims,ps,p,arg
+    line_ip = SVector{n}([T[] for i ∈ 1:n])
+    juncts = NamedTuple{(:R,:c₁,:c₂),Tuple{T,Tuple{Int,Int},Tuple{Int,Int}}}[]
+    each_intersect(nwn.lines, nwn.dims, []) do i₁,i₂,arr,dims,ps,p,arg
         push!(line_ip[i₁],ps[1])
         push!(line_ip[i₂],ps[2])
         push!(juncts,(R=nwn.Rⱼ,c₁=(i₁,length(line_ip[i₁])),c₂=(i₂,length(line_ip[i₂]))))
     end
-    each_intersect(nwn.lines, vcat(nwn.elecs,nwn.grnds), nwn.dims, []) do i₁,i₂,arr₁,arr₂,nwn.dims,ps,p,arg
+    each_intersect(nwn.lines, vcat(nwn.elecs,nwn.grnds), nwn.dims, []) do i₁,i₂,arr₁,arr₂,dims,ps,p,arg
         i₂ += nₗ
         push!(line_ip[i₁],ps[1])
         push!(line_ip[i₂],ps[2])
         push!(juncts,(R=nwn.Rₑ,c₁=(i₁,length(line_ip[i₁])),c₂=(i₂,length(line_ip[i₂]))))
     end
-    nwn.ls = length.(line_ip)
-    nwn.ns = cumsum(nwn.ls) # number of nodes
-    ms = vcat([0],cumsum(nwn.ls[1:nₗ].>1)) # number of wires with inner-wire resistances
+    nwn.ls = length.(line_ip) # number of intersections on each wire
+    nwn.ns = cumsum(nwn.ls) # number of nodes up to wire i
+    # to count number of nodes involved in inner-wire resistances:
+    # if ls[i]==0 then line i does not add to the node count or add a ressitance
+    # if ls[1]==1 then line i has no inner wire resistances; -1 to nodes in inner-wires
+    # if ls[1]>1 then line i has i-1 inner wire resistances; -1 to nodes in inner-wires
+    # ⟹ if ls[i]>0 then -1 to nodes in inner-wires
+    ms = vcat([0],cumsum(nwn.ls[1:nₗ].>0)) 
     nᵢ = nwn.ns[nₗ]-ms[end]
     nⱼ = length(juncts)
     perms = sortperm.(line_ip)
     invperms = invperm.(perms)
     permute!.(line_ip,perms)
 
-    src, dst, wgt = zeros(Int,nᵢ+nⱼ), zeros(Int,nᵢ+nⱼ), zeros(Float64,nᵢ+nⱼ)
+    src, dst, wgt = zeros(Int,nᵢ+nⱼ), zeros(Int,nᵢ+nⱼ), zeros(T,nᵢ+nⱼ)
     for i ∈ 1:nₗ
         js = 1:(nwn.ls[i]-1)
-        slice = js.+(nwn.ns[i]-ls[i]-ms[i]+1)
+        slice = js.+(nwn.ns[i]-nwn.ls[i]-ms[i])
         Rₗ = len(nwn.lines[i])*nwn.props[i].ρ/(π*nwn.props[i].D*nwn.props[i].D)
-        src[slice] = js.+(nwn.ns[i]-ls[i])
-        dst[slice] = js.+(1+nwn.ns[i]-ls[i]) 
+        src[slice] = js.+(nwn.ns[i]-nwn.ls[i])
+        dst[slice] = js.+(1+nwn.ns[i]-nwn.ls[i]) 
         wgt[slice] = 1 ./(Rₗ.*(diff(line_ip[i])))
     end
     for (i,ju) ∈ enumerate(juncts)
-        src[i+nᵢ] = nwn.ns[ju.c₁[1]]+nwn.ls[ju.c₁[1]]+invperms[ju.c₁[1]][ju.c₁[2]]
-        dst[i+nᵢ] = nwn.ns[ju.c₂[1]]+nwn.ls[ju.c₂[1]]+invperms[ju.c₂[1]][ju.c₂[2]]
+        src[i+nᵢ] = nwn.ns[ju.c₁[1]]-nwn.ls[ju.c₁[1]]+invperms[ju.c₁[1]][ju.c₁[2]]
+        dst[i+nᵢ] = nwn.ns[ju.c₂[1]]-nwn.ls[ju.c₂[1]]+invperms[ju.c₂[1]][ju.c₂[2]]
         wgt[i+nᵢ] = 1/ju.R
     end
-    sp = sparse(vcat(src,dst), vcat(dst,src), vcat(wgt,wgt),nwn.ns[end]+nwn.ls[end],nwn.ns[end]+nwn.ls[end],+)
+    sp = sparse(vcat(src,dst), vcat(dst,src), vcat(wgt,wgt),nwn.ns[end],nwn.ns[end],+)
     nwn.graph = SimpleWeightedGraph(sp)
+    nwn
 end
 
 
@@ -89,7 +96,7 @@ or ground).
 function circuit_eqs(nwn::NWN_circuit)
     nₗ, nₑ, n₀ = length(nwn.lines), length(nwn.elecs), length(nwn.grnds)
     nₗₙ = nwn.ns[nₗ] # number of line related nodes
-    nₑₙ = nwn.ns[nₑ] - nₗₙ
+    # nₑₙ = nwn.ns[nₑ] - nₗₙ
     # n₀ₙ = nwn.ns[n₀] - nₗₙ - nₑₙ
 
     # include only nodes part of the actual circuit
@@ -105,7 +112,7 @@ function circuit_eqs(nwn::NWN_circuit)
     # generates B matrix
     B = spzeros(length(inds),nₑ)
     for i ∈ 1:nₑ
-        B[findall(inds.∈(nwn.ns[nₗ+i-1]+1):nwn.ns[nₗ+i]),i] = ones(Int,ls[nₗ+i])
+        B[findall(inds.∈[(nwn.ns[nₗ+i]-nwn.ls[nₗ+i]+1):nwn.ns[nₗ+i]]),i] = ones(Int,nwn.ls[nₗ+i])
     end
 
     # generates system of equations in the form Ax=z
@@ -124,8 +131,15 @@ to have only one electrode.
 """
 function sheet_resistance(nwn::NWN_circuit)
     @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
-    A, z, inds = eqs_JDA(nwn)
+    A, z, inds = circuit_eqs(nwn)
     sol = A\collect(z)
+    nwn.volts[1]/sol[end]
+end
+
+function sheet_resistance(nwn::NWN_circuit{M,BigFloat,N}) where {M,N}
+    @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
+    A, z, inds = circuit_eqs(nwn)
+    sol = collect(A)\collect(z)
     nwn.volts[1]/sol[end]
 end
 

@@ -1,4 +1,4 @@
-export rand_lines, rand_wires, rand_network, rand_network_circuit, ensemble, ensemble_JDA
+export rand_lines, rand_network, rand_network_circuit, ensemble, ensemble_circuit
 
 using Random
 using Distributions: Normal
