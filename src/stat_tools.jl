@@ -26,7 +26,7 @@ function emsd_f_circuit(f, params, M, args...; N=32)
 end
 
 """
-Computes junction density in a simiar algorithm to `find_juncts`.
+Computes junction density in a similar algorithm to `find_juncts`.
 """
 function ρ_junct(nwn::NWN{T,N}) where {T,N}
     n = length(nwn.wires)
