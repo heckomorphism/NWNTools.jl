@@ -26,8 +26,8 @@ using DelimitedFiles, StaticArrays
         R_MNR = sheet_resistance(nwn_MNR)
         @test R_JDA≈(8*Rⱼ/3)
         function R_MNR_analytic(ρₑ,D,Rⱼ)
-            numerator = 9*(3+5*sqrt(big(2)))*ρₑ^2+D^2*big(π)*Rⱼ*((81+69*sqrt(big(2)))*ρₑ+80*D^2*big(π)*Rⱼ)
-            denominator = 15*D^2*big(π)*(ρₑ+sqrt(big(2))*ρₑ+2*D^2*big(π)*Rⱼ)
+            numerator = 72*(3+5*sqrt(big(2)))*ρₑ^2+2*D^2*big(π)*Rⱼ*((81+69*sqrt(big(2)))*ρₑ+20*D^2*big(π)*Rⱼ)
+            denominator = 15*D^2*big(π)*(2*(1+sqrt(big(2)))*ρₑ+D^2*big(π)*Rⱼ)
             return numerator/denominator
         end
         @test R_MNR≈R_MNR_analytic(ρₑ,D,Rⱼ)
