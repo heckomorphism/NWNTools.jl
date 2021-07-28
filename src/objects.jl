@@ -18,11 +18,8 @@ A structure to hold all of the information relevant to a wire.
 """
 struct Wire{T<:Real,N}
     line::Line{T,N} # Wire geomoetry
-    # length::Float64 # Wire length
     ρ::Float64 # Resistivity
     D::Float64 # Wire diameter
-    # A::Float64 # Cross sectional area
-    # Rℓ⁻¹::Float64 # Resistance per length
 end
 
 struct WireProp{T<:Number}
@@ -38,6 +35,11 @@ struct NWN{T<:Real,N}
     dims::SVector{N,T}
 end
 
+"""
+Contains the data to perform circuit analysis of a nanowire 
+network including all geometric, electrical, and structural 
+data.
+"""
 mutable struct NWN_circuit{M,T<:Number,N} # T is numeric type, N is number of spatial dimensions, M is Model parameter
     lines::Array{Line{T,N},1}
     props::Array{WireProp{T},1}
@@ -54,6 +56,8 @@ mutable struct NWN_circuit{M,T<:Number,N} # T is numeric type, N is number of sp
         update_graph(new{M,T,N}(lines,props,elecs,volts,grnds,dims,Rⱼ,Rₑ))
     end
 end
+
+NWN_circuit{M2}(o::NWN_circuit{M1}) where {M1,M2} = NWN_circuit{M2}(o.lines, o.props, o.elecs, o.volts, o.grnds, o.dims, o.Rⱼ, o.Rₑ)
 
 
 
