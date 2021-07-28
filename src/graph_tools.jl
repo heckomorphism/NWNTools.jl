@@ -68,7 +68,7 @@ function update_graph(nwn::NWN_circuit{:MNR,T,N}) where {T,N}
     for i ∈ 1:nₗ
         js = 1:(nwn.ls[i]-1)
         slice = js.+(nwn.ns[i]-nwn.ls[i]-ms[i])
-        Rₗ = len(nwn.lines[i])*nwn.props[i].ρ/(π*nwn.props[i].D*nwn.props[i].D)
+        Rₗ = 4*len(nwn.lines[i])*nwn.props[i].ρ/(π*nwn.props[i].D*nwn.props[i].D)
         src[slice] = js.+(nwn.ns[i]-nwn.ls[i])
         dst[slice] = js.+(1+nwn.ns[i]-nwn.ls[i]) 
         wgt[slice] = 1 ./(Rₗ.*(diff(line_ip[i])))
