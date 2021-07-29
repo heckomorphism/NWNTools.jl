@@ -93,11 +93,11 @@ the JDA. Removes ill conditioned nodes (those not
 connected through the circuit to a voltage source 
 or ground).
 """
-function circuit_eqs(nwn::NWN_circuit)
+function circuit_eqs(nwn::NWN_circuit{M,T,N}) where {M,T,N}
     nₗ, nₑ, n₀ = length(nwn.lines), length(nwn.elecs), length(nwn.grnds)
     nₗₙ = nwn.ns[nₗ] # number of line related nodes
-    # nₑₙ = nwn.ns[nₑ] - nₗₙ
-    # n₀ₙ = nwn.ns[n₀] - nₗₙ - nₑₙ
+    nₑₙ = nwn.ns[nₗ + nₑ] - nₗₙ
+    # n₀ₙ = nwn.ns[nₗ + nₑ + n₀] - nₗₙ - nₑₙ
 
     # include only nodes part of the actual circuit
     con_comps = connected_components(nwn.graph)
@@ -110,16 +110,19 @@ function circuit_eqs(nwn::NWN_circuit)
     L = -laplacian_matrix(nwn.graph)[inds,inds]
 
     # generates B matrix
-    B = spzeros(length(inds),nₑ)
+    B = spzeros(T,length(inds),nₑₙ)
+    vs = spzeros(T,nₑₙ)
     for i ∈ 1:nₑ
-        B[findall(inds.∈[(nwn.ns[nₗ+i]-nwn.ls[nₗ+i]+1):nwn.ns[nₗ+i]]),i] = ones(Int,nwn.ls[nₗ+i])
+        js = (nwn.ns[nₗ+i]-nwn.ls[nₗ+i]+1):nwn.ns[nₗ+i]
+        B[CartesianIndex.(findall(inds.∈[js]),js.-nₗₙ)] .= one(T)
+        vs[js.-nₗₙ] .= nwn.volts[i]
     end
 
     # generates system of equations in the form Ax=z
     A = [L B;
-        transpose(B) spzeros(nₑ,nₑ)]
-    z = [spzeros(length(inds));
-        sparse(nwn.volts)]
+        transpose(B) spzeros(T,nₑₙ,nₑₙ)]
+    z = [spzeros(T,length(inds));
+        vs]
     A,z,inds
 end
 
@@ -133,7 +136,7 @@ function sheet_resistance(nwn::NWN_circuit)
     @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
     A, z, inds = circuit_eqs(nwn)
     sol = A\collect(z)
-    nwn.volts[1]/sol[end]
+    nwn.volts[1]/sum(sol[length(inds)+1:end])
 end
 
 function sheet_resistance(nwn::NWN_circuit{M,BigFloat,N}) where {M,N}
