@@ -45,16 +45,16 @@ end
 function rand_network_circuit(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,M) where {T}
     lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
     wprops = repeat([WireProp(ρ,D)],n)
-    elec = Line(SA[0.0,0.0],SA[0.0,dims[2]])
-    grnd = Line(SA[dims[1],0.0],dims)
+    elec = Line(SA[eps(T),zero(T)],SA[eps(T),dims[2]])
+    grnd = Line(SA[dims[1]-eps(T),zero(T)],SA[dims[1]-eps(T),dims[2]])
     NWN_circuit{M}(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
 end
 
 function rand_network_circuit(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,M,::Val{:conducting}) where {T}
     lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
     wprops = repeat([WireProp(ρ,D)],n)
-    elec = Line(SA[0.0,0.0],SA[0.0,dims[2]])
-    grnd = Line(SA[dims[1],0.0],dims)
+    elec = Line(SA[eps(T),zero(T)],SA[eps(T),dims[2]])
+    grnd = Line(SA[dims[1]-eps(T),zero(T)],SA[dims[1]-eps(T),dims[2]])
     nwn = NWN_circuit{M}(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
     while !is_conducting(nwn)
         lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)

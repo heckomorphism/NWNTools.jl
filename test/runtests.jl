@@ -25,11 +25,8 @@ using DelimitedFiles, StaticArrays
         nwn_MNR = NWN_circuit{:MNR}(lines, props, elecs, volts, grnds, dims, Rⱼ,Rⱼ)
         R_MNR = sheet_resistance(nwn_MNR)
         @test R_JDA≈(8*Rⱼ/3)
-        function R_MNR_analytic(ρₑ,D,Rⱼ)
-            numerator = 72*(3+5*sqrt(big(2)))*ρₑ^2+2*D^2*big(π)*Rⱼ*((81+69*sqrt(big(2)))*ρₑ+20*D^2*big(π)*Rⱼ)
-            denominator = 15*D^2*big(π)*(2*(1+sqrt(big(2)))*ρₑ+D^2*big(π)*Rⱼ)
-            return numerator/denominator
-        end
-        @test R_MNR≈R_MNR_analytic(ρₑ,D,Rⱼ)
-    end
+        numerator = 72*(3+5*sqrt(big(2)))*ρₑ^2+2*D^2*big(π)*Rⱼ*((81+69*sqrt(big(2)))*ρₑ+20*D^2*big(π)*Rⱼ)
+        denominator = 15*D^2*big(π)*(2*(1+sqrt(big(2)))*ρₑ+D^2*big(π)*Rⱼ)
+        R_MNR_analytic = numerator/denominator
+        @test R_MNR≈R_MNR_analytic
 end
