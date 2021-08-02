@@ -41,18 +41,18 @@ network including all geometric, electrical, and structural
 data.
 """
 mutable struct NWN_circuit{M,T<:Number,N} # T is numeric type, N is number of spatial dimensions, M is Model parameter
-    lines::Array{Line{T,N},1}
-    props::Array{WireProp{T},1}
-    elecs::Array{Line{T,N},1}
-    volts::Array{T,1}
-    grnds::Array{Line{T,N},1}
+    lines::Vector{Line{T,N}}
+    props::Vector{WireProp{T}}
+    elecs::Vector{Line{T,N}}
+    volts::Vector{T}
+    grnds::Vector{Line{T,N}}
     dims::SVector{N,T}
     Rⱼ::T
     Rₑ::T
     graph::SimpleWeightedGraph{Int, T}
     ls::Vector{Int}
     ns::Vector{Int}
-    function NWN_circuit{M}(lines::Array{Line{T,N},1},props::Array{WireProp{T},1},elecs::Array{Line{T,N},1},volts::Array{T,1},grnds::Array{Line{T,N},1},dims::SVector{N,T},Rⱼ::T,Rₑ::T) where {M,T,N}
+    function NWN_circuit{M}(lines::Vector{Line{T,N}},props::Vector{WireProp{T}},elecs::Vector{Line{T,N}},volts::Vector{T},grnds::Vector{Line{T,N}},dims::SVector{N,T},Rⱼ::T,Rₑ::T) where {M,T,N}
         update_graph(new{M,T,N}(lines,props,elecs,volts,grnds,dims,Rⱼ,Rₑ))
     end
 end
