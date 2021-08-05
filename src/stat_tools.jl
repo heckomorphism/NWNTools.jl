@@ -4,17 +4,17 @@ using Statistics: mean, var, std
 
 """
 Computes the mean and standard deviation of an observable 
-f(nw) for nw a NWN.
+f(nw) for nw a `StickNetwork`.
 
 Parameters:
-    f:      Function, takes a NWN as the first argument 
+    f:      Function, takes a `StickNetwork` as the first argument 
             and returns an object which the mean and 
             standard deviation make sense for.
     params: Dimensions, wire density, and wire length.
     N:      Number of networks in the ensemble.
 """
 function emsd_f(f, params; N=32)
-    e = ensemble(N, params)
+    e = ensemble(N, params...)
     res = f.(e)
     mean(res), std(res)
 end
@@ -28,21 +28,21 @@ end
 """
 Computes junction density in a similar algorithm to `find_juncts`.
 """
-function ρ_junct(nwn::NWN{T,N}) where {T,N}
-    n = length(nwn.wires)
+function ρ_junct(net::StickNetwork{T,N}) where {T,N}
+    n = length(net.lines)
     m = 0
     for i ∈ 2:(n)
         for j ∈ 1:(i-1)
-            ps = intersection_params(nwn.wires[i].line,nwn.wires[j].line)
+            ps = intersection_params(net.lines[i],net.lines[j])
             if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
-                p = line_segment_point(ps[1],nwn.wires[i].line)
-                if sum( zeros(SVector{N,T}) .≤ p .≤ nwn.dims ) == N
+                p = line_segment_point(ps[1],net.lines[i])
+                if sum( zeros(SVector{N,T}) .≤ p .≤ net.dims ) == N
                     m += 1
                 end
             end
         end
     end
-    m/prod(nwn.dims)
+    m/prod(net.dims)
 end
 
 """

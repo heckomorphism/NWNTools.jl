@@ -58,8 +58,8 @@ end
 Given an NWN object finds all points of 
 intersection between wires. 
 """
-function find_juncts(nwn::NWN{T,N}) where {T,N}
-    each_intersect([w.line for w ∈ nwn.wires], nwn.dims, Array{Tuple{SVector{N,T},Tuple{Int,Int}},1}()) do i₁,i₂,arr,dims,ps,p,juncts
+function find_juncts(net::StickNetwork{T,N}) where {T,N}
+    each_intersect(net.lines, net.dims, Array{Tuple{SVector{N,T},Tuple{Int,Int}},1}()) do i₁,i₂,arr,dims,ps,p,juncts
         push!(juncts,(p,(i₁,i₂)))
     end
 end
@@ -67,8 +67,8 @@ end
 """
 Given an NWN object finds all connections between wires. 
 """
-function find_connect(nwn::NWN{T,N}) where {T,N}
-    each_intersect([w.line for w ∈ nwn.wires], nwn.dims, Array{Tuple{Int,Int},1}()) do i₁,i₂,arr,dims,ps,p,connects
+function find_connect(net::StickNetwork{T,N}) where {T,N}
+    each_intersect(net.lines, net.dims, Array{Tuple{Int,Int},1}()) do i₁,i₂,arr,dims,ps,p,connects
         push!(connects,(i₁,i₂))
     end
 end

@@ -36,10 +36,9 @@ Parameters:
     ρ:      Wire resistivity.
     D:      Wire diameter.
 """
-function rand_network(dims::SVector{N,T},n,l,ρ,D) where {N,T}
+function rand_network(dims::SVector{N,T},n,l) where {N,T}
     lines = rand_lines(dims::SVector{N,T},n::Int,l::Float64)
-    wires = Wire.(lines, ρ, D)
-    NWN(wires, dims)
+    StickNetwork(lines, dims)
 end
 
 function rand_network_circuit(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,M) where {T}
@@ -67,11 +66,9 @@ end
 Creates an ensemble of nanowire networks with the given 
 paramaters. 
 """
-function ensemble(n,dims::SVector{N,T},ρₙ,l,ρ,D) where {N,T}
-    [rand_network(dims, round(Int, ρₙ*prod(dims)), l, ρ, D) for i∈1:n]
+function ensemble(n,dims::SVector{N,T},ρₙ,l) where {N,T}
+    [rand_network(dims, round(Int, ρₙ*prod(dims)), l) for i∈1:n]
 end
-
-ensemble(n, params) = ensemble(n, params...)
 
 function ensemble_circuit(n,dims::SVector{2,T},ρₙ,l,ρ,D,V₊,Rⱼ,Rₑ,M,args...) where {T}
     [rand_network_circuit(dims,round(Int,ρₙ*prod(dims)),l,ρ,D,V₊,Rⱼ,Rₑ,M,args...) for i∈1:n]

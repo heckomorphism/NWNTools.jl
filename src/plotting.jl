@@ -27,3 +27,13 @@ end
         nwn.grnds
     end
 end
+
+@recipe function f(net::StickNetwork)
+    legend := false
+    grid := false
+    seriestype := :line
+    @series begin
+        linecolor := :black
+        net.lines
+    end
+end
