@@ -3,9 +3,12 @@ export update_graph, is_conducting, swap_index
 using SparseArrays
 
 """
+```julia
+swap_index(a)
+```
 Takes an iterable collection of iterable collections of the 
-form (a,b,c,...) and returns an object with "reversed" nesting 
-of the form ((a[1],b[1],c[1],...),(a[2],b[2],c[2],...),...).
+form `(a,b,c,...)` and returns an object with "reversed" nesting 
+of the form `((a[1],b[1],c[1],...),(a[2],b[2],c[2],...),...)`.
 """
 function swap_index(a)
     # if a is empty then set n=0 otherwise n=length(a[1])
@@ -15,7 +18,10 @@ function swap_index(a)
 end
 
 """
-Generates the graph of the nanowire network.
+```julia
+update_graph(nwn::NWN_circuit{:JDA,T,N})
+```
+Generates the graph of the electrical connections under the Junction Dominated Assumption model, `:JDA`, in the nanowire network `nwn` by mutating the `graph`, `ls`, and `ns` fields of nwn.
 """
 function update_graph(nwn::NWN_circuit{:JDA,T,N}) where {T,N}
     ww_src, ww_dst = connections(nwn.lines, nwn.dims)
@@ -34,6 +40,12 @@ function update_graph(nwn::NWN_circuit{:JDA,T,N}) where {T,N}
     nwn
 end
 
+"""
+```julia
+update_graph(nwn::NWN_circuit{:MNR,T,N})
+```
+Generates the graph of the electrical connections under the MNR model, `:MNR`, in the nanowire network `nwn` by mutating the `graph`, `ls`, and `ns` fields of nwn.
+"""
 function update_graph(nwn::NWN_circuit{:MNR,T,N}) where {T,N}
     nₗ, nₑ, n₀ = length(nwn.lines), length(nwn.elecs), length(nwn.grnds)
     n = nₗ + nₑ + n₀
@@ -84,8 +96,10 @@ function update_graph(nwn::NWN_circuit{:MNR,T,N}) where {T,N}
 end
 
 """
-Returns a boolean value for if the given network 
-has a path from at least one electrode and ground.
+```julia
+is_conducting(nwn::NWN_circuit)
+```
+Returns a boolean value for if the given network has a path between at least one electrode node and one ground node.
 """
 function is_conducting(nwn::NWN_circuit)
     nₗ, nₑ = length(nwn.lines), length(nwn.elecs)

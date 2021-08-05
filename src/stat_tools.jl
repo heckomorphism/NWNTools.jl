@@ -3,15 +3,10 @@ export emsd_f, emsd_f_circuit, ρ_junct, ρ_junct_avg, ρ_junct_mean_std
 using Statistics: mean, var, std
 
 """
-Computes the mean and standard deviation of an observable 
-f(nw) for nw a `StickNetwork`.
-
-Parameters:
-    f:      Function, takes a `StickNetwork` as the first argument 
-            and returns an object which the mean and 
-            standard deviation make sense for.
-    params: Dimensions, wire density, and wire length.
-    N:      Number of networks in the ensemble.
+```julia
+emsd_f(f, params; N=32)
+```
+Computes the mean and standard deviation of an ensemble of `StickNetwork`s determined by `params` with ensemble size `N`.
 """
 function emsd_f(f, params; N=32)
     e = ensemble(N, params...)
@@ -19,6 +14,14 @@ function emsd_f(f, params; N=32)
     mean(res), std(res)
 end
 
+"""
+```julia
+emsd_f_circuit(f, params, M, args...; N=32)
+```
+Computes the mean and standard deviation of an ensemble of `N` nanowire networks 
+with model `M` and parameters 'params'. `args` may specify additonal parameters to 
+`ensemble_circuit` such as the `Val(:conducting)` property.
+"""
 function emsd_f_circuit(f, params, M, args...; N=32)
     e = ensemble_circuit(N, params..., M, args...)
     res = f.(e)
@@ -26,7 +29,10 @@ function emsd_f_circuit(f, params, M, args...; N=32)
 end
 
 """
-Computes junction density in a similar algorithm to `find_juncts`.
+```julia
+ρ_junct(net)
+```
+Computes junction density of `StickNetwork` `net`.
 """
 function ρ_junct(net::StickNetwork{T,N}) where {T,N}
     n = length(net.lines)
@@ -46,8 +52,11 @@ function ρ_junct(net::StickNetwork{T,N}) where {T,N}
 end
 
 """
+```julia
+ρ_junct_mean_std(params; N=32)
+```
 Computes the mean and standard deviation of the junction 
-density for a certain configuration of NWN parameters.
+density of an ensemble of `StickNetwork`s given by `params`.
 """
 ρ_junct_mean_std(params; N=32) = emsd_f(ρ_junct, params; N=N)
 ρ_junct_mean_std(params...; N=32) = ρ_junct_mean_std(params; N=N)

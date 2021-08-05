@@ -1,9 +1,12 @@
 export circuit_eqs, sheet_resistance, currents
 
 """
+```julia
+circuit_eqs(nwn::NWN_circuit{M,T,N})
+```
 Creates the system of equations which solves the 
 electrical problem of the nanowire network under 
-the JDA. Removes ill conditioned nodes (those not 
+the given model `M`. Removes ill conditioned nodes (those not 
 connected through the circuit to a voltage source 
 or ground).
 """
@@ -41,10 +44,12 @@ function circuit_eqs(nwn::NWN_circuit{M,T,N}) where {M,T,N}
 end
 
 """
-Calculates the sheet resistance of a NWN object. 
-Solves the network using MNA and returns the ratio 
-of the voltage to the current. Requires the network 
-to have only one electrode.
+```julia
+sheet_resistance(nwn::NWN_circuit)
+```
+Calculates the sheet resistance of a nanowire network object. 
+Solves the network using MNA and returns the ratio of the voltage 
+to the current. Requires the network to have only one electrode.
 """
 function sheet_resistance(nwn::NWN_circuit)
     @assert length(nwn.elecs)==1 "Sheet resistance is only defined for one electrode and one ground."
@@ -61,6 +66,12 @@ function sheet_resistance(nwn::NWN_circuit{M,BigFloat,N}) where {M,N}
     nwn.volts[1]/sol[end]
 end
 
+"""
+```julia
+currents(nwn::NWN_circuit{M,T,N})
+```
+Returns a list of currents as iterated by `edges(nwn.graph)` and using thhe node labeling as defined by the model `M`.
+"""
 function currents(nwn::NWN_circuit{M,T,N}) where {M,T,N}
 	A,z,inds = circuit_eqs(nwn)
 	sol = A\collect(z)
