@@ -9,28 +9,31 @@ using RecipesBase
 end
 
 @recipe function f(nwn::NWN_circuit)
-    legend := false
-    grid := false
+    legend -> false
+    grid -> false
     seriestype := :line
     @series begin
         linecolor := :black
+        label := "Wires"
         nwn.lines
     end
     @series begin
         linecolor := :red
+        label := "Electrode"
         linewidth --> 2
         nwn.elecs
     end
     @series begin
         linecolor := :blue
+        label := "Ground"
         linewidth --> 2
         nwn.grnds
     end
 end
 
 @recipe function f(net::StickNetwork)
-    legend := false
-    grid := false
+    legend -> false
+    grid -> false
     seriestype := :line
     @series begin
         linecolor := :black
