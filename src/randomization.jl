@@ -13,7 +13,7 @@ Determines second point of line to be distance 'l' and random
 direction (as sampled unifromly from the N-1 sphere) from 
 the initial point.
 """
-function rand_lines(dims::SVector{N,T},n::Int,l::Float64) where {N,T}
+function rand_lines(dims::SVector{N,T},n::Int,l::T) where {N,T}
     x₀s = map(x->x.*dims,rand(SVector{N,T},n))
     A = rand(Normal(),N,n)
     # normalize columns of A to leave columns 
@@ -31,7 +31,7 @@ Generates a random `StickNetwork` using `rand_lines(dims,n,l)`
 and adds the properties of resistivity and wire diameter.
 """
 function rand_network(dims::SVector{N,T},n,l) where {N,T}
-    lines = rand_lines(dims::SVector{N,T},n::Int,l::Float64)
+    lines = rand_lines(dims::SVector{N,T},n::Int,l::T)
     StickNetwork(lines, dims)
 end
 
@@ -47,7 +47,7 @@ Electrode and ground are positioned `eps(T)` in from the edges to minimize
 rejected intersections.
 """
 function rand_network_circuit(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,M) where {T}
-    lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
+    lines = rand_lines(dims::SVector{2,T},n::Int,l::T)
     wprops = repeat([WireProp(ρ,D)],n)
     elec = Line(SA[eps(T),zero(T)],SA[eps(T),dims[2]])
     grnd = Line(SA[dims[1]-eps(T),zero(T)],SA[dims[1]-eps(T),dims[2]])
@@ -61,13 +61,13 @@ rand_network_circuit(dims,n,l,ρ,D,V₊,Rⱼ,Rₑ,M,Val(:conducting))
 Generates a random nanowire network using model `M` which is gaurenteed to conduct. Otherwise the same as `rand_network_circuit`.
 """
 function rand_network_circuit(dims::SVector{2,T},n,l,ρ,D,V₊,Rⱼ,Rₑ,M,::Val{:conducting}) where {T}
-    lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
+    lines = rand_lines(dims::SVector{2,T},n::Int,l::T)
     wprops = repeat([WireProp(ρ,D)],n)
     elec = Line(SA[eps(T),zero(T)],SA[eps(T),dims[2]])
     grnd = Line(SA[dims[1]-eps(T),zero(T)],SA[dims[1]-eps(T),dims[2]])
     nwn = NWN_circuit{M}(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
     while !is_conducting(nwn)
-        lines = rand_lines(dims::SVector{2,T},n::Int,l::Float64)
+        lines = rand_lines(dims::SVector{2,T},n::Int,l::T)
         nwn = NWN_circuit{M}(lines, wprops, [elec], [V₊], [grnd], dims, Rⱼ, Rₑ)
     end
     nwn
