@@ -29,4 +29,5 @@ using DelimitedFiles, StaticArrays
         denominator = 15*D^2*big(π)*(2*(1+sqrt(big(2)))*ρₑ+D^2*big(π)*Rⱼ)
         R_MNR_analytic = numerator/denominator
         @test R_MNR≈R_MNR_analytic
+    end
 end
