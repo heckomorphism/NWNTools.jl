@@ -1,6 +1,6 @@
 export Line, Wire, StickNetwork, WireProp, NWN_circuit, len
 
-using StaticArrays, LinearAlgebra, LightGraphs, SimpleWeightedGraphs
+using StaticArrays, LinearAlgebra, Graphs, SimpleWeightedGraphs
 
 
 """
