@@ -45,7 +45,7 @@ function each_intersect(f!, arr₁::Array{Line{S,N}}, arr₂::Array{Line{S,N}}, 
             ps = intersection_params(arr₁[i₁],arr₂[i₂])
             if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
                 p = line_segment_point(ps[1],arr₁[i₁])
-                if sum( zero(SVector{N, S}) .≤ p .≤ dims ) == N
+                if all( zero(SVector{N, S}) .≤ p .≤ dims )
                     f!(i₁,i₂,arr₁,arr₂,dims,ps,p,arg)
                 end
             end
@@ -71,7 +71,7 @@ function each_intersect(f!, arr::Array{Line{S,N}}, dims::SVector{N,S}, arg) wher
             ps = intersection_params(arr[i₁],arr[i₂])
             if (0.0 ≤ ps[1] ≤ 1.0) && (0.0 ≤ ps[2] ≤ 1.0)
                 p = line_segment_point(ps[1],arr[i₁])
-                if sum( zero(SVector{N, S}) .≤ p .≤ dims ) == N
+                if all( zero(SVector{N, S}) .≤ p .≤ dims )
                     f!(i₁,i₂,arr,dims,ps,p,arg)
                 end
             end
